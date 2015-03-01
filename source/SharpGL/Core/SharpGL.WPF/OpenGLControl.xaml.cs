@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -107,6 +108,8 @@ namespace SharpGL.WPF
             }
         }
 
+        public IntPtr? ParentHwnd { get; set; }
+
         /// <summary>
         /// When overridden in a derived class, is invoked whenever application code or 
         /// internal processes call <see cref="M:System.Windows.FrameworkElement.ApplyTemplate"/>.
@@ -116,11 +119,27 @@ namespace SharpGL.WPF
             //  Call the base.
             base.OnApplyTemplate();
 
+            object parameter = null;
+
+            if (RenderContextType == RenderContextType.NativeWindow)
+            {
+                if (ParentHwnd.HasValue == false)
+                {
+                    var hwnd = (HwndSource)PresentationSource.FromVisual(this);
+                    if (hwnd != null)
+                        parameter = hwnd;
+                }
+                else
+                {
+                    parameter = ParentHwnd.Value;
+                }
+            }
+
             //  Lock on OpenGL.
             lock (gl)
             {
                 //  Create OpenGL.
-                gl.Create(OpenGLVersion, RenderContextType, 1, 1, 32, null);
+                gl.Create(OpenGLVersion, RenderContextType, 1, 1, 32, parameter);
             }
 
             //  Create our fast event args.
